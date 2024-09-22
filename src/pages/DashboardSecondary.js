@@ -1,11 +1,10 @@
-// DashboardSecondary.js
 import React, { useEffect, useState } from 'react';
 import { Box, Text, Heading, Button, SimpleGrid, Switch } from '@chakra-ui/react';
 import { db } from '../firebaseConfig';
 import { ref, get } from 'firebase/database';
-import MapComponent from '../components/MapComponent'; // Replace with your MapComponent
-import DeviceTracker from '../components/DeviceTracker'; // Import DeviceTracker component
-import { cardStyles, mapContainerStyles, buttonStyles } from '../styles'; // Import styles
+import SecondaryMapComponent from '../components/SecondaryMapComponent';
+import DeviceTracker from '../components/DeviceTracker';
+import { cardStyles, mapContainerStyles, buttonStyles } from '../styles';
 
 const DashboardSecondary = () => {
   const [primaryUserId, setPrimaryUserId] = useState('primary-uid'); // Replace with actual primary user ID
@@ -13,11 +12,11 @@ const DashboardSecondary = () => {
   const [active, setActive] = useState(false);
   const [lastTrackedLocation, setLastTrackedLocation] = useState(null);
   const [currentLocation, setCurrentLocation] = useState(null);
-  const [trackingEnabled, setTrackingEnabled] = useState(true); // Toggle tracking
+  const [trackingEnabled, setTrackingEnabled] = useState(true);
 
   useEffect(() => {
     const fetchUserData = async () => {
-      const userRef = ref(db, `users/${primaryUserId}`); // Fetch data for primary user
+      const userRef = ref(db, `users/${primaryUserId}`);
       const userSnapshot = await get(userRef);
       if (userSnapshot.exists()) {
         const userData = userSnapshot.val();
@@ -61,30 +60,17 @@ const DashboardSecondary = () => {
           )}
         </Box>
         <Box {...cardStyles.baseStyle} {...cardStyles.hoverStyle}>
-          <Text>Current Location:</Text>
-          {currentLocation ? (
-            <Box mt={4}>
-              <MapComponent location={currentLocation} sx={mapContainerStyles} /> {/* Display the map with the current location */}
-              <Text>
-                Latitude: {currentLocation.latitude}, Longitude: {currentLocation.longitude} <br />
-                Timestamp: {new Date(currentLocation.timestamp).toLocaleString()}
-              </Text>
-            </Box>
-          ) : (
-            <Text>No data available</Text>
-          )}
+          <Text>Enable Tracking</Text>
+          <Switch isChecked={trackingEnabled} onChange={toggleTracking} />
         </Box>
         <Box {...cardStyles.baseStyle} {...cardStyles.hoverStyle}>
           <Button {...buttonStyles.baseStyle} onClick={handleLogout}>
             Logout
           </Button>
         </Box>
-        <Box {...cardStyles.baseStyle} {...cardStyles.hoverStyle}>
-          <Text>Enable Tracking</Text>
-          <Switch isChecked={trackingEnabled} onChange={toggleTracking} />
-        </Box>
       </SimpleGrid>
-      <DeviceTracker primaryUserId={primaryUserId} /> {/* Track device info */}
+      <SecondaryMapComponent primaryLocation={currentLocation} />
+      <DeviceTracker primaryUserId={primaryUserId} />
     </Box>
   );
 };

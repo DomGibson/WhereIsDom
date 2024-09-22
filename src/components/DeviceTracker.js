@@ -1,9 +1,8 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { auth, db } from '../firebaseConfig';
-import { ref, update, onDisconnect, onValue } from 'firebase/database';
+import { ref, update, onDisconnect } from 'firebase/database';
 import { onAuthStateChanged } from 'firebase/auth';
 
-// Function to determine the device type
 const getDeviceType = () => {
   const userAgent = navigator.userAgent.toLowerCase();
   if (userAgent.includes("iphone") || userAgent.includes("ipad")) {
@@ -17,35 +16,31 @@ const getDeviceType = () => {
 const DeviceTracker = ({ primaryUserId }) => {
   useEffect(() => {
     let deviceRef;
-    let intervalId;
 
-    // Device information
     const deviceInfo = {
-      deviceId: `device-${Math.random().toString(36).substr(2, 9)}`, // Unique identifier for the device
-      deviceType: getDeviceType(), // Determine device type
-      deviceName: navigator.platform || 'Unknown Device', // Platform as device name
+      deviceId: `device-${Math.random().toString(36).substr(2, 9)}`,
+      deviceType: getDeviceType(),
+      deviceName: navigator.platform || 'Unknown Device',
       active: true,
       lastActive: new Date().toISOString(),
     };
 
-    // Function to update device info in Realtime Database
     const updateDeviceInfo = async (userId) => {
       try {
         deviceRef = ref(db, `trackingDevices/${primaryUserId}/${userId}`);
         await update(deviceRef, deviceInfo);
         console.log("Device info updated:", deviceInfo);
         
-        // Handle disconnection - set active to false when disconnected
         onDisconnect(deviceRef).update({
           active: false,
           lastActive: new Date().toISOString(),
         });
-        
-        // Update last active time every 5 seconds to keep the device active
-        intervalId = setInterval(() => {
+
+        // Keep the device active status updated
+        setInterval(() => {
           update(deviceRef, {
             lastActive: new Date().toISOString(),
-            active: true, // Keep active true while logged in
+            active: true,
           });
         }, 5000);
       } catch (error) {
@@ -53,23 +48,18 @@ const DeviceTracker = ({ primaryUserId }) => {
       }
     };
 
-    // Listen to the authentication state
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
-        // User is signed in, update device info
         updateDeviceInfo(user.uid);
-      } else {
-        // User is not signed in, do nothing
       }
     });
 
     return () => {
       unsubscribe();
-      if (intervalId) clearInterval(intervalId); // Clear interval on component unmount
     };
   }, [primaryUserId]);
 
-  return null; // This component doesn't render anything visually
+  return null;
 };
 
 export default DeviceTracker;

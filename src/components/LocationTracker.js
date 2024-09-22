@@ -1,42 +1,57 @@
-import React, { useEffect, useState } from 'react';
-import { auth, db } from '../firebaseConfig';
+import React, { useEffect } from 'react';
+import { db } from '../firebaseConfig';
 import { ref, update } from 'firebase/database';
-import { onAuthStateChanged } from 'firebase/auth';
 
-const LocationTracker = ({ userId }) => {
-  const [location, setLocation] = useState(null);
-
+const LocationTracker = ({ userId, trackingEnabled }) => {
   useEffect(() => {
     let watchId;
 
-    // Function to update current location in Realtime Database
-    const updateLocation = async (userId, location) => {
-      try {
-        const locationRef = ref(db, `users/${userId}/currentLocation`);
-        await update(locationRef, {
-          latitude: location.latitude,
-          longitude: location.longitude,
-          timestamp: new Date().toISOString(),
-        });
-        console.log("Location updated:", location);
-      } catch (error) {
-        console.error("Error updating location in Firebase: ", error);
+    const updateLocation = async (location) => {
+      if (userId && trackingEnabled) {
+        try {
+          const locationRef = ref(db, `users/${userId}/currentLocation`);
+          await update(locationRef, {
+            latitude: location.latitude,
+            longitude: location.longitude,
+            timestamp: new Date().toISOString(),
+          });
+          console.log("Location updated:", location);
+        } catch (error) {
+          console.error("Error updating location in Firebase: ", error);
+        }
       }
     };
 
-    // Function to track the user's location
+    const handleLocationError = (error) => {
+      console.error("Error getting location:", error);
+      switch (error.code) {
+        case error.PERMISSION_DENIED:
+          alert("User denied the request for Geolocation.");
+          break;
+        case error.POSITION_UNAVAILABLE:
+          alert("Location information is unavailable.");
+          break;
+        case error.TIMEOUT:
+          alert("The request to get user location timed out.");
+          break;
+        case error.UNKNOWN_ERROR:
+          alert("An unknown error occurred.");
+          break;
+        default:
+          alert("An unexpected error occurred.");
+          break;
+      }
+    };
+
     const startTracking = () => {
       if (navigator.geolocation) {
         watchId = navigator.geolocation.watchPosition(
           (position) => {
             const { latitude, longitude } = position.coords;
             const newLocation = { latitude, longitude };
-            setLocation(newLocation);
-            updateLocation(userId, newLocation);
+            updateLocation(newLocation);
           },
-          (error) => {
-            console.error("Error getting location:", error);
-          },
+          handleLocationError,
           {
             enableHighAccuracy: true,
             maximumAge: 0,
@@ -44,35 +59,24 @@ const LocationTracker = ({ userId }) => {
           }
         );
       } else {
-        console.error("Geolocation is not supported by this browser.");
+        alert("Geolocation is not supported by this browser.");
       }
     };
 
-    // Start tracking when component mounts
-    if (userId) {
+    if (trackingEnabled) {
       startTracking();
+    } else if (watchId) {
+      navigator.geolocation.clearWatch(watchId);
     }
 
-    // Clean up function to stop tracking
     return () => {
-      if (navigator.geolocation && watchId) {
+      if (watchId) {
         navigator.geolocation.clearWatch(watchId);
       }
     };
-  }, [userId]);
+  }, [userId, trackingEnabled]);
 
-  return (
-    <div>
-      {location ? (
-        <p>
-          Current Location: Latitude {location.latitude}, Longitude{" "}
-          {location.longitude}
-        </p>
-      ) : (
-        <p>Tracking location...</p>
-      )}
-    </div>
-  );
+  return null; // This component doesn't render anything visually
 };
 
 export default LocationTracker;
