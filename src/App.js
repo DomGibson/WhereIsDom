@@ -14,8 +14,8 @@ function App() {
         
         {/* Wrap private routes with PrivateRoute */}
         <Route path="/" element={<PrivateRoute />}>
-          <Route path="dashboard-primary" element={<DashboardPrimary />} />
-          <Route path="dashboard-secondary" element={<DashboardSecondary />} />
+          <Route path="d-p" element={<DashboardPrimary />} />
+          <Route path="d-s" element={<DashboardSecondary />} />
         </Route>
         
       </Routes>

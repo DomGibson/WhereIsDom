@@ -46,9 +46,9 @@ const LoginPage = () => {
   
       // Redirect based on role
       if (role === 'primary') {
-        navigate('/dashboard-primary');
+        navigate('/d-p');
       } else {
-        navigate('/dashboard-secondary');
+        navigate('/d-s');
       }
   
       // Show success toast
